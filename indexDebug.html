@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vyayahita - Password Reset</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link rel="icon" href="image.png" type="image/png">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .app-name {
+            font-size: 36px;
+            font-weight: bold;
+            color: #57b8ff;
+            margin-bottom: 20px;
+        }
+
+        .input-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: #57b8ff;
+            outline: none;
+        }
+
+        label {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            font-size: 14px;
+            color: #aaa;
+            pointer-events: none;
+            transition: 0.3s;
+        }
+
+        input:focus + label,
+        input:not(:placeholder-shown) + label {
+            top: -10px;
+            font-size: 12px;
+            color: #57b8ff;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #57b8ff;
+            color: white;
+            padding: 12px;
+            width: 100%;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #6e7dff;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 20px;
+        }
+
+        .success-message {
+            color: #2ecc71;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-name">Vyayahita</div>
+        <h1>Password Reset</h1>
+        <form id="resetForm">
+            <div class="input-container">
+                <input type="password" id="newPassword" placeholder=" " required>
+                <label for="newPassword">Enter new password</label>
+                <span id="toggleNewPassword" class="toggle-password">🙈</span>
+            </div>
+            <div class="input-container">
+                <input type="password" id="confirmPassword" placeholder=" " required>
+                <label for="confirmPassword">Confirm new password</label>
+                <span id="toggleConfirmPassword" class="toggle-password">🙈</span>
+            </div>
+            <button type="submit">Reset Password</button>
+        </form>
+        <p id="message" class="error-message"></p>
+    </div>
+
+    <script type="module">
+        // Decrypt Firebase configuration using CryptoJS
+        function decryptConfig(encryptedString) {
+            const secretKey = "rishabh5499"; 
+            const bytes = CryptoJS.AES.decrypt(encryptedString, secretKey);
+            const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+            return JSON.parse(decryptedText);
+        }
+
+        // Encrypted Firebase config
+        const encryptedConfig = "U2FsdGVkX1+eJ0zT4jMGemuTTkotk0Spe5cOiB+ETD0KM4e43zZ6y+4W/vnWOq27jGPfOX/4/mVy1mYtC3N1j/gldDLthppEriKteyKDvSH7VwHL4J7omUGfGd7YzE4e/wO9LWhBd7w8G1nfvzLyXn2fcBwYT1SpokEhxx6nRosZq95Al32qwrwJRGfYRxJOfXBz9Ayu/nvZUsf9QXcJ7u+lj924TD5OMHrtseq6/JgXfvNbc1jl5hVUzIo2dyuXJzOsPly77niqldq2k7e/BgKjB+W2U4nnv+22Q/rzplrPL9/Xy2qk9sAefBOxpH63NRi9CWlvTR1rOKjw1ACNc1HbIEM8qOVa/znWo7El4gso/VmYzzSFYg15OZchbv1TWchFkS9QI3pCoLbm9/isPuki1lgXkQD3ZiNqQkuwkMFmEsXepzLGz5DBdLap4tGJiUwgNxi0q76M7NMMCAVMrCdZuBHGAC94/nhXjL1HzlAvUSv8H9umlclwOp5LzytysKmR0+fV9Gb9hdJRH3p5ew==";
+        const firebaseConfig = decryptConfig(encryptedConfig);
+
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, confirmPasswordReset } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+
+        // Get reset code from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const oobCode = urlParams.get('oobCode');
+
+        if (!oobCode) {
+            const message = document.getElementById('message');
+            message.textContent = "Invalid or expired reset link.";
+            message.classList.add('error-message');
+        } else {
+            document.getElementById('resetForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const message = document.getElementById('message');
+
+                if (newPassword === confirmPassword) {
+                    confirmPasswordReset(auth, oobCode, newPassword)
+                        .then(() => {
+                            message.textContent = "Password reset successfully.";
+                            message.classList.remove('error-message');
+                            message.classList.add('success-message');
+                            document.getElementById('newPassword').disabled = true;
+                            document.getElementById('confirmPassword').disabled = true;
+                        })
+                        .catch((error) => {
+                            if (error.code === "auth/invalid-action-code") {
+                                message.textContent = "The reset link is invalid or has expired. Please request a new link.";
+                            } else {
+                                message.textContent = `Error: ${error.message}`;
+                            }
+                            message.classList.add('error-message');
+                            message.classList.remove('success-message');
+                        });
+                } else {
+                    message.textContent = "Passwords do not match.";
+                    message.classList.remove('success-message');
+                    message.classList.add('error-message');
+                }
+            });
+        }
+
+        // Toggle password visibility
+        const toggleNewPassword = document.getElementById('toggleNewPassword');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+
+        toggleNewPassword.addEventListener('click', () => {
+            const passwordField = document.getElementById('newPassword');
+            const type = passwordField.type === "password" ? "text" : "password";
+            passwordField.type = type;
+            toggleNewPassword.textContent = type === "password" ? "🙈" : "🙉"; 
+        });
+
+        toggleConfirmPassword.addEventListener('click', () => {
+            const passwordField = document.getElementById('confirmPassword');
+            const type = passwordField.type === "password" ? "text" : "password";
+            passwordField.type = type;
+            toggleConfirmPassword.textContent = type === "password" ? "🙈" : "🙉"; 
+        });
+    </script>
+</body>
+</html>
