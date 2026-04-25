@@ -120,6 +120,14 @@ export const Navbar = () => {
               {section.charAt(0).toUpperCase() + section.slice(1)}
             </button>
           ))}
+          <a
+            href="http://localhost:3001"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-600 transition-colors"
+          >
+            JSON Viewer
+          </a>
         </div>
 
         {/* Right Side */}
@@ -155,6 +163,15 @@ export const Navbar = () => {
                 {section.charAt(0).toUpperCase() + section.slice(1)}
               </button>
             ))}
+            <a
+              href="http://localhost:3001"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-blue-600 transition-colors text-left py-2"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              JSON Viewer
+            </a>
           </div>
         </div>
       )}
