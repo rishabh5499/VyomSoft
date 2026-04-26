@@ -11,6 +11,7 @@ import About from "./pages/About"
 import MitaVyayaPrivacy from "./pages/privacy/MitaVyayaPrivacy"
 import SmartPausePrivacy from "./pages/privacy/SmartPausePrivacy"
 import NotFound from "./pages/NotFound"
+import JsonViewerPage from "./pages/JsonViewerPage"
 
 const queryClient = new QueryClient()
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/about" element={<About />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
+          <Route path="/jsonViewer" element={<JsonViewerPage />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
