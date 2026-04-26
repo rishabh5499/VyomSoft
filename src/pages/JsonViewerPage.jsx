@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import JsonNode from "./JsonNode";
 
-const API_BASE = "http://api.vyomsoft.in/api/json";
+const API_BASE = "https://api.vyomsoft.in/api/json";
 
 function App() {
   const [input, setInput] = useState("");
