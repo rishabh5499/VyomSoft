@@ -3,7 +3,7 @@ import JsonNode from "./JsonNode";
 
 const API_BASE = "https://api.vyomsoft.in/api/json";
 
-function App() {
+function JsonViewerPage() {
   const [input, setInput] = useState("");
   const [json, setJson] = useState(null);
   const [error, setError] = useState("");
@@ -21,20 +21,26 @@ function App() {
   // Load JSON from URL
   useEffect(() => {
     const path = window.location.pathname;
-
+  
     if (path.startsWith("/jsonViewer/")) {
       const id = path.split("/jsonViewer/")[1];
-
+  
       fetch(`${API_BASE}/${id}`)
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error("Failed to fetch JSON");
+          }
+          return res.json();
+        })
         .then(data => {
           if (data?.content) {
             setInput(data.content);
             setJson(JSON.parse(data.content));
           }
         })
-        .catch(() => {
-          console.error("Failed to load JSON");
+        .catch((err) => {
+          console.error("Fetch error:", err);
+          setError("Unable to load JSON");
         });
     }
   }, []);
@@ -59,26 +65,33 @@ function App() {
 
   const handleSave = async () => {
     try {
-      // validate JSON before saving
       JSON.parse(input);
-
+  
       const res = await fetch(API_BASE, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: input
+        body: JSON.stringify({
+          content: input,
+          privateData: false,
+          token: null
+        })
       });
-
+  
+      if (!res.ok) throw new Error("Save failed");
+  
       const data = await res.json();
-
+  
       const shareUrl = `${window.location.origin}/jsonViewer/${data.id}`;
+  
       window.history.pushState({}, "", `/jsonViewer/${data.id}`);
-
+  
       await navigator.clipboard.writeText(shareUrl);
-
-      alert("Link copied to clipboard!");
+  
+      alert("Link copied!");
     } catch (e) {
+      console.error(e);
       alert("Invalid JSON or failed to save");
     }
   };
@@ -220,4 +233,4 @@ function App() {
   );
 }
 
-export default App;
+export default JsonViewerPage;
