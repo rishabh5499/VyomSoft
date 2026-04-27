@@ -22,8 +22,8 @@ function App() {
   useEffect(() => {
     const path = window.location.pathname;
 
-    if (path.startsWith("/json/")) {
-      const id = path.split("/json/")[1];
+    if (path.startsWith("/jsonViewer/")) {
+      const id = path.split("/jsonViewer/")[1];
 
       fetch(`${API_BASE}/${id}`)
         .then(res => res.json())
@@ -72,8 +72,8 @@ function App() {
 
       const data = await res.json();
 
-      const shareUrl = `${window.location.origin}/json/${data.id}`;
-      window.history.pushState({}, "", `/json/${data.id}`);
+      const shareUrl = `${window.location.origin}/jsonViewer/${data.id}`;
+      window.history.pushState({}, "", `/jsonViewer/${data.id}`);
 
       await navigator.clipboard.writeText(shareUrl);
 
