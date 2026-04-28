@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import JsonNode from "./JsonNode";
 
+// const API_BASE = "http://localhost:8080/api/json";
 const API_BASE = "https://api.vyomsoft.in/api/json";
 
 function JsonViewerPage() {
@@ -8,10 +9,17 @@ function JsonViewerPage() {
   const [json, setJson] = useState(null);
   const [error, setError] = useState("");
 
-  // Theme
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [passcode, setPasscode] = useState("");
+  const [shareUrl, setShareUrl] = useState("");
+
+  const [needsAuth, setNeedsAuth] = useState(false);
+  const [accessCode, setAccessCode] = useState("");
+  const [currentId, setCurrentId] = useState(null);
+
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("theme");
-    return saved ? saved === "dark" : true;
+    return saved ? saved === "dark" : false;
   });
 
   useEffect(() => {
@@ -21,35 +29,43 @@ function JsonViewerPage() {
   // Load JSON from URL
   useEffect(() => {
     const path = window.location.pathname;
-  
     if (path.startsWith("/jsonViewer/")) {
       const id = path.split("/jsonViewer/")[1];
-  
-      fetch(`${API_BASE}/${id}`)
-        .then(res => {
-          if (!res.ok) {
-            throw new Error("Failed to fetch JSON");
-          }
-          return res.json();
-        })
-        .then(data => {
-          if (data?.content) {
-            setInput(data.content);
-            setJson(JSON.parse(data.content));
-          }
-        })
-        .catch((err) => {
-          console.error("Fetch error:", err);
-          setError("Unable to load JSON");
-        });
+      setCurrentId(id);
+      fetchData(id);
     }
   }, []);
 
+  const fetchData = async (id, token = null) => {
+    try {
+      const url = token
+        ? `${API_BASE}/${id}?token=${token}`
+        : `${API_BASE}/${id}`;
+
+      const res = await fetch(url);
+
+      if (res.status === 401) {
+        setNeedsAuth(true);
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data?.content) {
+        setInput(data.content);
+        setJson(JSON.parse(data.content));
+        setNeedsAuth(false);
+      }
+    } catch {
+      console.error("Failed to load JSON");
+    }
+  };
+
   const theme = {
-    background: darkMode ? "#1e1e1e" : "#ffffff",
-    text: darkMode ? "white" : "#000000",
-    card: darkMode ? "#2d2d2d" : "#f5f5f5",
-    border: darkMode ? "#444" : "#ccc"
+    background: darkMode ? "#1e1e1e" : "#f4f6f8",
+    text: darkMode ? "#fff" : "#111",
+    card: darkMode ? "#2d2d2d" : "#ffffff",
+    border: darkMode ? "#444" : "#ddd"
   };
 
   const handleParse = () => {
@@ -57,7 +73,7 @@ function JsonViewerPage() {
       const parsed = JSON.parse(input);
       setJson(parsed);
       setError("");
-    } catch (e) {
+    } catch {
       setError("Invalid JSON");
       setJson(null);
     }
@@ -66,7 +82,6 @@ function JsonViewerPage() {
   const handleSave = async () => {
     try {
       JSON.parse(input);
-  
       const res = await fetch(API_BASE, {
         method: "POST",
         headers: {
@@ -74,25 +89,16 @@ function JsonViewerPage() {
         },
         body: JSON.stringify({
           content: input,
-          privateData: false,
-          token: null
+          privateData: isPrivate,
+          token: isPrivate ? passcode : null
         })
       });
-  
-      if (!res.ok) throw new Error("Save failed");
-  
+
       const data = await res.json();
-  
-      const shareUrl = `${window.location.origin}/jsonViewer/${data.id}`;
-  
-      window.history.pushState({}, "", `/jsonViewer/${data.id}`);
-  
-      await navigator.clipboard.writeText(shareUrl);
-  
-      alert("Link copied!");
-    } catch (e) {
-      console.error(e);
-      alert("Invalid JSON or failed to save");
+      const url = `${window.location.origin}/jsonViewer/${data.id}`;
+      setShareUrl(url);
+    } catch {
+      alert("Failed to save");
     }
   };
 
@@ -103,10 +109,12 @@ function JsonViewerPage() {
         color: theme.text,
         minHeight: "100vh",
         padding: 20,
-        fontFamily: "system-ui, -apple-system, sans-serif"
+        fontFamily: "system-ui",
+        display: "flex",
+        justifyContent: "center"
       }}
     >
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+      <div style={{ width: "100%", maxWidth: 1000 }}>
 
         {/* HEADER */}
         <div
@@ -119,79 +127,75 @@ function JsonViewerPage() {
         >
           <h2 style={{ margin: 0 }}>JSON Viewer</h2>
 
-          {/* Toggle */}
-          <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
-            <span style={{ marginRight: 8 }}>
-              {darkMode ? "🌙" : "☀️"}
-            </span>
-
-            <input
-              type="checkbox"
-              checked={darkMode}
-              onChange={() => setDarkMode(!darkMode)}
-              style={{ display: "none" }}
-            />
+          <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span>{darkMode ? "🌙" : "☀️"}</span>
 
             <div
+              onClick={() => setDarkMode(!darkMode)}
               style={{
-                width: 40,
-                height: 20,
+                width: 42,
+                height: 22,
                 background: darkMode ? "#4caf50" : "#ccc",
                 borderRadius: 20,
-                position: "relative"
+                position: "relative",
+                cursor: "pointer"
               }}
             >
               <div
                 style={{
-                  width: 16,
-                  height: 16,
+                  width: 18,
+                  height: 18,
                   background: "white",
                   borderRadius: "50%",
                   position: "absolute",
                   top: 2,
-                  left: darkMode ? 22 : 2
+                  left: darkMode ? 22 : 2,
+                  transition: "0.3s"
                 }}
               />
             </div>
           </label>
         </div>
 
-        {/* INPUT CARD */}
         <div
           style={{
             background: theme.card,
-            padding: 15,
-            borderRadius: 8,
-            marginBottom: 20,
-            border: `1px solid ${theme.border}`
+            padding: 20,
+            borderRadius: 12,
+            border: `1px solid ${theme.border}`,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            marginBottom: 20
           }}
         >
           <textarea
             rows={10}
-            style={{
-              width: "100%",
-              background: "transparent",
-              color: theme.text,
-              border: "none",
-              outline: "none",
-              fontFamily: "monospace",
-              fontSize: 14
-            }}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Paste JSON here..."
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              resize: "vertical",
+              // maxHeight: "400px",
+              background: darkMode ? "#1a1a1a" : "#fff",
+              color: theme.text,
+              border: `1px solid ${theme.border}`,
+              borderRadius: 8,
+              padding: 12,
+              fontFamily: "monospace"
+            }}
           />
 
-          <div style={{ marginTop: 10 }}>
+          <div style={{ marginTop: 12 }}>
             <button
               onClick={handleParse}
               style={{
-                padding: "6px 14px",
+                padding: "8px 16px",
                 background: "#4caf50",
                 color: "white",
                 border: "none",
-                borderRadius: 4,
-                cursor: "pointer"
+                borderRadius: 6,
+                marginRight: 10
               }}
             >
               Parse
@@ -200,28 +204,94 @@ function JsonViewerPage() {
             <button
               onClick={handleSave}
               style={{
-                padding: "6px 14px",
+                padding: "8px 16px",
                 background: "#2196f3",
                 color: "white",
                 border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
-                marginLeft: 10
+                borderRadius: 6
               }}
             >
               Save & Share
             </button>
           </div>
+
+          <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+            <input
+              type="checkbox"
+              checked={isPrivate}
+              onChange={() => setIsPrivate(!isPrivate)}
+            />
+            {isPrivate ? "🔒 Private (Passcode required)" : "🔓 Public"}
+          </label>
+
+          {isPrivate && (
+            <input
+              type="text"
+              placeholder="Enter passcode"
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
+              style={{
+                marginTop: 10,
+                padding: 10,
+                width: "100%",
+                borderRadius: 6,
+                border: `1px solid ${theme.border}`
+              }}
+            />
+          )}
+
+          {shareUrl && (
+            <div style={{ marginTop: 15 }}>
+              <p>Share Link:</p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <input
+                  value={shareUrl}
+                  readOnly
+                  style={{
+                    flex: 1,
+                    padding: 8,
+                    borderRadius: 6,
+                    border: `1px solid ${theme.border}`
+                  }}
+                />
+                <button
+                  onClick={() => navigator.clipboard.writeText(shareUrl)}
+                  style={{
+                    padding: "8px 12px",
+                    background: "#555",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6
+                  }}
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* OUTPUT */}
+        {needsAuth && (
+          <div style={{ marginBottom: 20 }}>
+            <p>🔒 Enter passcode:</p>
+            <input
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              style={{ padding: 8, marginRight: 10 }}
+            />
+            <button onClick={() => fetchData(currentId, accessCode)}>
+              Unlock
+            </button>
+          </div>
+        )}
+
         <div
           style={{
             background: theme.card,
-            padding: 15,
-            borderRadius: 8,
+            padding: 20,
+            borderRadius: 12,
             border: `1px solid ${theme.border}`,
-            minHeight: 200
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
           }}
         >
           {error && <p style={{ color: "red" }}>{error}</p>}
