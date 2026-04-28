@@ -16,6 +16,25 @@ function JsonViewerPage() {
   const [needsAuth, setNeedsAuth] = useState(false);
   const [accessCode, setAccessCode] = useState("");
   const [currentId, setCurrentId] = useState(null);
+  const [passcodeError, setPasscodeError] = useState("");
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopySuccess(true);
+
+      setTimeout(() => {
+        setCopySuccess(false);
+      }, 1500);
+    } catch {
+      setCopySuccess(false);
+    }
+  };  
+
+  const isPasscodeInvalid =
+    isPrivate &&
+    (passcode.trim().length === 0 || passcode.trim().length < 4);
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("theme");
@@ -186,6 +205,7 @@ function JsonViewerPage() {
             }}
           />
 
+          {/* BUTTONS */}
           <div style={{ marginTop: 12 }}>
             <button
               onClick={handleParse}
@@ -203,41 +223,91 @@ function JsonViewerPage() {
 
             <button
               onClick={handleSave}
+              disabled={isPrivate && !passcode.trim()}
               style={{
                 padding: "8px 16px",
-                background: "#2196f3",
+                background:
+                  isPrivate && !passcode.trim() ? "#888" : "#2196f3",
                 color: "white",
                 border: "none",
-                borderRadius: 6
+                borderRadius: 6,
+                cursor:
+                  isPrivate && !passcode.trim() ? "not-allowed" : "pointer",
+                opacity:
+                  isPrivate && !passcode.trim() ? 0.6 : 1
               }}
             >
               Save & Share
             </button>
           </div>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+          {/* PRIVATE / PUBLIC TOGGLE */}
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginTop: 12
+            }}
+          >
             <input
               type="checkbox"
               checked={isPrivate}
-              onChange={() => setIsPrivate(!isPrivate)}
+              onChange={() => {
+                setIsPrivate(!isPrivate);
+
+                // Clear passcode if switching back to public
+                if (isPrivate) {
+                  setPasscode("");
+                }
+              }}
             />
             {isPrivate ? "🔒 Private (Passcode required)" : "🔓 Public"}
           </label>
 
+          {/* PASSCODE INPUT */}
           {isPrivate && (
-            <input
-              type="text"
-              placeholder="Enter passcode"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              style={{
-                marginTop: 10,
-                padding: 10,
-                width: "100%",
-                borderRadius: 6,
-                border: `1px solid ${theme.border}`
-              }}
-            />
+            <div style={{ marginTop: 10 }}>
+              <input
+                type="text"
+                placeholder="Enter passcode"
+                value={passcode}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPasscode(value);
+
+                  if (value.trim().length === 0) {
+                    setPasscodeError("Passcode is required");
+                  } else if (value.trim().length < 4) {
+                    setPasscodeError("Passcode must be at least 4 characters");
+                  } else {
+                    setPasscodeError("");
+                  }
+                }}
+                style={{
+                  padding: 10,
+                  width: "100%",
+                  boxSizing: "border-box",
+                  borderRadius: 6,
+                  border: `1px solid ${passcodeError ? "red" : theme.border}`,
+                  outline: "none"
+                }}
+              />
+
+              {passcodeError && (
+                <p
+                  style={{
+                    color: "#ff4d4f",
+                    fontSize: 12,
+                    marginTop: 6,
+                    marginBottom: 0,
+                    fontWeight: 500
+                  }}
+                >
+                  {passcodeError}
+                </p>
+              )}
+            </div>
           )}
 
           {shareUrl && (
@@ -256,6 +326,10 @@ function JsonViewerPage() {
                 />
                 <button
                   onClick={() => navigator.clipboard.writeText(shareUrl)}
+                  disabled={
+                    (isPrivate && !passcode.trim()) ||
+                    !!passcodeError
+                  }
                   style={{
                     padding: "8px 12px",
                     background: "#555",
