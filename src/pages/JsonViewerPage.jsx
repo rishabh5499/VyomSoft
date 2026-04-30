@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import JsonNode from "./JsonNode";
 
-// const API_BASE = "http://localhost:8080/api/json";
 const API_BASE = "https://api.vyomsoft.in/api/json";
 
 function JsonViewerPage() {
@@ -18,23 +17,10 @@ function JsonViewerPage() {
   const [currentId, setCurrentId] = useState(null);
   const [passcodeError, setPasscodeError] = useState("");
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showPasscode, setShowPasscode] = useState(false);
+  const [authError, setAuthError] = useState("");
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopySuccess(true);
-
-      setTimeout(() => {
-        setCopySuccess(false);
-      }, 1500);
-    } catch {
-      setCopySuccess(false);
-    }
-  };  
-
-  const isPasscodeInvalid =
-    isPrivate &&
-    (passcode.trim().length === 0 || passcode.trim().length < 4);
+  const APP_NAME = "VyomJSON";
 
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("theme");
@@ -45,7 +31,10 @@ function JsonViewerPage() {
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
-  // Load JSON from URL
+  useEffect(() => {
+    document.title = `${APP_NAME} | Secure JSON Viewer`;
+  }, []);
+
   useEffect(() => {
     const path = window.location.pathname;
     if (path.startsWith("/jsonViewer/")) {
@@ -57,34 +46,46 @@ function JsonViewerPage() {
 
   const fetchData = async (id, token = null) => {
     try {
-      const url = token
-        ? `${API_BASE}/${id}?token=${token}`
-        : `${API_BASE}/${id}`;
-
+      const url = token ? `${API_BASE}/${id}?token=${token}` : `${API_BASE}/${id}`;
       const res = await fetch(url);
-
+  
       if (res.status === 401) {
         setNeedsAuth(true);
+        if (token) setAuthError("Invalid passcode. Please try again.");
         return;
       }
-
+  
       const data = await res.json();
-
+  
       if (data?.content) {
         setInput(data.content);
         setJson(JSON.parse(data.content));
         setNeedsAuth(false);
+        setAuthError(""); // Clear error on success
       }
     } catch {
       console.error("Failed to load JSON");
     }
   };
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch {
+      setCopySuccess(false);
+    }
+  };
+
   const theme = {
-    background: darkMode ? "#1e1e1e" : "#f4f6f8",
-    text: darkMode ? "#fff" : "#111",
-    card: darkMode ? "#2d2d2d" : "#ffffff",
-    border: darkMode ? "#444" : "#ddd"
+    background: darkMode ? "#0f172a" : "#f8fafc",
+    text: darkMode ? "#f1f5f9" : "#1e293b",
+    card: darkMode ? "#1e293b" : "#ffffff",
+    border: darkMode ? "#334155" : "#e2e8f0",
+    accent: "#3b82f6",
+    success: "#22c55e",
+    error: "#ef4444"
   };
 
   const handleParse = () => {
@@ -93,7 +94,7 @@ function JsonViewerPage() {
       setJson(parsed);
       setError("");
     } catch {
-      setError("Invalid JSON");
+      setError("Invalid JSON format. Please check your syntax.");
       setJson(null);
     }
   };
@@ -103,273 +104,317 @@ function JsonViewerPage() {
       JSON.parse(input);
       const res = await fetch(API_BASE, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content: input,
           privateData: isPrivate,
           token: isPrivate ? passcode : null
         })
       });
-
       const data = await res.json();
-      const url = `${window.location.origin}/jsonViewer/${data.id}`;
-      setShareUrl(url);
+      setShareUrl(`${window.location.origin}/jsonViewer/${data.id}`);
     } catch {
-      alert("Failed to save");
+      alert("Please enter valid JSON before saving.");
     }
   };
 
+  const buttonStyle = (bg) => ({
+    padding: "10px 20px",
+    background: bg,
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontWeight: "600",
+    transition: "all 0.2s",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px"
+  });
+
   return (
-    <div
-      style={{
-        background: theme.background,
-        color: theme.text,
-        minHeight: "100vh",
-        padding: 20,
-        fontFamily: "system-ui",
-        display: "flex",
-        justifyContent: "center"
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: 1000 }}>
-
+    <div style={{
+      background: theme.background,
+      color: theme.text,
+      minHeight: "100vh",
+      padding: "40px 20px",
+      fontFamily: "'Inter', system-ui, sans-serif",
+      transition: "background 0.3s ease"
+    }}>
+      <div style={{ width: "100%", maxWidth: 900, margin: "0 auto" }}>
+        
         {/* HEADER */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 20
-          }}
-        >
-          <h2 style={{ margin: 0 }}>JSON Viewer</h2>
-
-          <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span>{darkMode ? "🌙" : "☀️"}</span>
-
-            <div
-              onClick={() => setDarkMode(!darkMode)}
-              style={{
-                width: 42,
-                height: 22,
-                background: darkMode ? "#4caf50" : "#ccc",
-                borderRadius: 20,
-                position: "relative",
-                cursor: "pointer"
-              }}
-            >
-              <div
-                style={{
-                  width: 18,
-                  height: 18,
-                  background: "white",
-                  borderRadius: "50%",
-                  position: "absolute",
-                  top: 2,
-                  left: darkMode ? 22 : 2,
-                  transition: "0.3s"
-                }}
-              />
-            </div>
-          </label>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "800", letterSpacing: "-0.5px" }}>
+            {darkMode ? "💠" : "🔷"} {APP_NAME.slice(0, 4)}<span style={{ color: theme.accent }}>{APP_NAME.slice(4)}</span>
+          </h1>
+          <p style={{ margin: "4px 0 0", opacity: 0.6, fontSize: "14px" }}>Visualize and share your data securely.</p>
         </div>
 
-        <div
-          style={{
-            background: theme.card,
-            padding: 20,
-            borderRadius: 12,
-            border: `1px solid ${theme.border}`,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            marginBottom: 20
-          }}
-        >
+          <button 
+            onClick={() => setDarkMode(!darkMode)}
+            style={{
+              background: theme.card,
+              border: `1px solid ${theme.border}`,
+              padding: "8px 12px",
+              borderRadius: "12px",
+              cursor: "pointer",
+              fontSize: "18px",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+            }}
+          >
+            {darkMode ? "☀️" : "🌙"}
+          </button>
+        </div>
+
+        {/* INPUT SECTION */}
+        <div style={{
+          background: theme.card,
+          padding: "24px",
+          borderRadius: "16px",
+          border: `1px solid ${theme.border}`,
+          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
+          marginBottom: "24px"
+        }}>
           <textarea
-            rows={10}
+            rows={12}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Paste JSON here..."
+            placeholder='{ "type": "awesome", "status": "ready" }'
             style={{
               width: "100%",
               boxSizing: "border-box",
               resize: "vertical",
-              // maxHeight: "400px",
-              background: darkMode ? "#1a1a1a" : "#fff",
+              background: darkMode ? "#0f172a" : "#fcfcfc",
               color: theme.text,
-              border: `1px solid ${theme.border}`,
-              borderRadius: 8,
-              padding: 12,
-              fontFamily: "monospace"
+              border: `2px solid ${theme.border}`,
+              borderRadius: "12px",
+              padding: "16px",
+              fontFamily: "'Fira Code', monospace",
+              fontSize: "14px",
+              outline: "none",
+              transition: "border-color 0.2s"
             }}
+            onFocus={(e) => e.target.style.borderColor = theme.accent}
+            onBlur={(e) => e.target.style.borderColor = theme.border}
           />
 
-          {/* BUTTONS */}
-          <div style={{ marginTop: 12 }}>
-            <button
-              onClick={handleParse}
-              style={{
-                padding: "8px 16px",
-                background: "#4caf50",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                marginRight: 10
-              }}
-            >
-              Parse
-            </button>
-
-            <button
-              onClick={handleSave}
-              disabled={isPrivate && !passcode.trim()}
-              style={{
-                padding: "8px 16px",
-                background:
-                  isPrivate && !passcode.trim() ? "#888" : "#2196f3",
-                color: "white",
-                border: "none",
-                borderRadius: 6,
-                cursor:
-                  isPrivate && !passcode.trim() ? "not-allowed" : "pointer",
-                opacity:
-                  isPrivate && !passcode.trim() ? 0.6 : 1
-              }}
-            >
-              Save & Share
-            </button>
-          </div>
-
-          {/* PRIVATE / PUBLIC TOGGLE */}
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              marginTop: 12
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={isPrivate}
-              onChange={() => {
-                setIsPrivate(!isPrivate);
-
-                // Clear passcode if switching back to public
-                if (isPrivate) {
-                  setPasscode("");
-                }
-              }}
-            />
-            {isPrivate ? "🔒 Private (Passcode required)" : "🔓 Public"}
-          </label>
-
-          {/* PASSCODE INPUT */}
-          {isPrivate && (
-            <div style={{ marginTop: 10 }}>
-              <input
-                type="text"
-                placeholder="Enter passcode"
-                value={passcode}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setPasscode(value);
-
-                  if (value.trim().length === 0) {
-                    setPasscodeError("Passcode is required");
-                  } else if (value.trim().length < 4) {
-                    setPasscodeError("Passcode must be at least 4 characters");
-                  } else {
-                    setPasscodeError("");
-                  }
-                }}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", flexWrap: "wrap", gap: "15px" }}>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button onClick={handleParse} style={buttonStyle(theme.success)}>
+                Parse JSON
+              </button>
+              <button 
+                onClick={handleSave} 
+                disabled={isPrivate && !passcode.trim()}
                 style={{
-                  padding: 10,
-                  width: "100%",
-                  boxSizing: "border-box",
-                  borderRadius: 6,
-                  border: `1px solid ${passcodeError ? "red" : theme.border}`,
-                  outline: "none"
+                  ...buttonStyle(theme.accent),
+                  opacity: (isPrivate && !passcode.trim()) ? 0.5 : 1
                 }}
-              />
+              >
+                Save & Share
+              </button>
+            </div>
 
-              {passcodeError && (
-                <p
-                  style={{
-                    color: "#ff4d4f",
-                    fontSize: 12,
-                    marginTop: 6,
-                    marginBottom: 0,
-                    fontWeight: 500
+            <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "14px", fontWeight: "500" }}>
+                <input
+                  type="checkbox"
+                  checked={isPrivate}
+                  onChange={() => {
+                    setIsPrivate(!isPrivate);
+                    if (isPrivate) setPasscode("");
                   }}
-                >
-                  {passcodeError}
-                </p>
+                  style={{ width: "18px", height: "18px", cursor: "pointer" }}
+                />
+                {isPrivate ? "🔒 Private" : "🔓 Public"}
+              </label>
+
+              {isPrivate && (
+                <div style={{ marginTop: 10, position: "relative" }}>
+                  <input
+                    type={showPasscode ? "text" : "password"}
+                    placeholder="Enter passcode (min 4 chars)"
+                    value={passcode}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPasscode(value);
+                      if (value.trim().length === 0) {
+                        setPasscodeError("Passcode is required");
+                      } else if (value.trim().length < 4) {
+                        setPasscodeError("Passcode must be at least 4 characters");
+                      } else {
+                        setPasscodeError("");
+                      }
+                    }}
+                    style={{
+                      padding: "12px 45px 12px 12px", // Extra right padding for the icon
+                      width: "100%",
+                      boxSizing: "border-box",
+                      borderRadius: "8px",
+                      border: `1px solid ${passcodeError ? theme.error : theme.border}`,
+                      background: theme.background,
+                      color: theme.text,
+                      fontSize: "14px",
+                      outline: "none",
+                      transition: "border-color 0.2s"
+                    }}
+                  />
+                  
+                  {/* EYE ICON TOGGLE */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPasscode(!showPasscode)}
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "16px",
+                      padding: "5px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: 0.6,
+                      color: theme.text
+                    }}
+                  >
+                    {showPasscode ? "👁️" : "🙈"}
+                  </button>
+
+                  {passcodeError && (
+                    <p style={{
+                        color: theme.error,
+                        fontSize: "12px",
+                        marginTop: "6px",
+                        fontWeight: "500"
+                      }}>
+                      {passcodeError}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
-          )}
+          </div>
 
           {shareUrl && (
-            <div style={{ marginTop: 15 }}>
-              <p>Share Link:</p>
-              <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ 
+              marginTop: "20px", 
+              padding: "16px", 
+              background: darkMode ? "rgba(59, 130, 246, 0.1)" : "#eff6ff", 
+              borderRadius: "12px",
+              border: `1px dashed ${theme.accent}`
+            }}>
+              <p style={{ margin: "0 0 8px 0", fontSize: "12px", fontWeight: "700", color: theme.accent, textTransform: "uppercase" }}>Your Shareable Link</p>
+              <div style={{ display: "flex", gap: "10px" }}>
                 <input
                   value={shareUrl}
                   readOnly
                   style={{
                     flex: 1,
-                    padding: 8,
-                    borderRadius: 6,
-                    border: `1px solid ${theme.border}`
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: `1px solid ${theme.border}`,
+                    background: theme.card,
+                    color: theme.text,
+                    fontSize: "13px"
                   }}
                 />
                 <button
-                  onClick={() => navigator.clipboard.writeText(shareUrl)}
-                  disabled={
-                    (isPrivate && !passcode.trim()) ||
-                    !!passcodeError
-                  }
+                  onClick={handleCopy}
                   style={{
-                    padding: "8px 12px",
-                    background: "#555",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 6
+                    ...buttonStyle(copySuccess ? theme.success : "#64748b"),
+                    padding: "0 15px",
+                    fontSize: "13px"
                   }}
                 >
-                  Copy
+                  {copySuccess ? "✓ Copied" : "Copy"}
                 </button>
               </div>
             </div>
           )}
         </div>
 
+        {/* AUTH FOR PRIVATE VIEW */}
         {needsAuth && (
-          <div style={{ marginBottom: 20 }}>
-            <p>🔒 Enter passcode:</p>
-            <input
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value)}
-              style={{ padding: 8, marginRight: 10 }}
-            />
-            <button onClick={() => fetchData(currentId, accessCode)}>
-              Unlock
-            </button>
+          <div style={{ 
+            textAlign: "center", 
+            padding: "40px", 
+            background: theme.card, 
+            borderRadius: "16px", 
+            marginBottom: "24px",
+            border: `2px solid ${authError ? theme.error : theme.accent}`,
+            transition: "all 0.3s ease"
+          }}>
+            <h3 style={{ margin: "0 0 16px 0" }}>🔒 This JSON is Protected</h3>
+            <div style={{ display: "flex", justifyContent: "center", gap: "10px", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <input
+                  type="password"
+                  placeholder="Enter passcode"
+                  value={accessCode}
+                  onChange={(e) => {
+                    setAccessCode(e.target.value);
+                    if (authError) setAuthError(""); // Clear error while typing
+                  }}
+                  style={{ 
+                    padding: "10px", 
+                    borderRadius: "8px", 
+                    border: `1px solid ${authError ? theme.error : theme.border}`,
+                    outline: "none",
+                    background: theme.background,
+                    color: theme.text
+                  }}
+                />
+                <button 
+                  onClick={() => fetchData(currentId, accessCode)} 
+                  style={buttonStyle(theme.accent)}
+                >
+                  Unlock Data
+                </button>
+              </div>
+              
+              {/* WRONG CODE MESSAGE */}
+              {authError && (
+                <p style={{ 
+                  color: theme.error, 
+                  fontSize: "14px", 
+                  marginTop: "12px", 
+                  fontWeight: "600",
+                  animation: "shake 0.2s ease-in-out 0s 2" // Optional: add a CSS shake
+                }}>
+                  {authError}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
-        <div
-          style={{
-            background: theme.card,
-            padding: 20,
-            borderRadius: 12,
-            border: `1px solid ${theme.border}`,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-          }}
-        >
-          {error && <p style={{ color: "red" }}>{error}</p>}
+        {/* VIEWER SECTION */}
+        <div style={{
+          background: theme.card,
+          padding: "24px",
+          borderRadius: "16px",
+          border: `1px solid ${theme.border}`,
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+          minHeight: "200px"
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px", alignItems: "center" }}>
+             <span style={{ fontSize: "12px", fontWeight: "700", opacity: 0.5, textTransform: "uppercase" }}>JSON Output</span>
+             {json && <span style={{ fontSize: "11px", background: theme.background, padding: "4px 8px", borderRadius: "4px" }}>Valid Object</span>}
+          </div>
+          
+          {error && <div style={{ color: theme.error, padding: "20px", textAlign: "center", fontWeight: "500" }}>{error}</div>}
           {!error && json && <JsonNode data={json} />}
+          {!error && !json && (
+            <div style={{ opacity: 0.3, textAlign: "center", padding: "60px 0" }}>
+              <p>No data to visualize. Paste and parse JSON to begin.</p>
+            </div>
+          )}
         </div>
 
       </div>
