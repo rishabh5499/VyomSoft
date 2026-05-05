@@ -3,7 +3,6 @@ import React, { useState } from "react";
 function JsonNode({ data }) {
   const [open, setOpen] = useState(true);
 
-  // Check if current theme is dark based on localStorage
   const isDark = localStorage.getItem("theme") === "dark";
 
   const getType = (value) => {
@@ -14,7 +13,6 @@ function JsonNode({ data }) {
 
   const type = getType(data);
 
-  // Modern Theme Palette
   const colors = {
     string: isDark ? "#a5d6ff" : "#0969da",   // Soft blue
     number: isDark ? "#d2a8ff" : "#8250df",   // Purple
