@@ -23,7 +23,7 @@ const principles = [
 ]
 
 const stats = [
-  { number: "2+", label: "Products Launched" },
+  { number: "3+", label: "Products Launched" },
   { number: "100%", label: "Customer Satisfaction" },
   { number: "24/7", label: "Support Available" },
   { number: "∞", label: "Innovation Drive" },

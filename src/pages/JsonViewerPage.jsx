@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import JsonNode from "./JsonNode";
+import VyomFooter from "./VyomFooter";
 
 const API_BASE = "https://api.vyomsoft.in/api/json";
 
@@ -61,7 +62,7 @@ function JsonViewerPage() {
         setInput(data.content);
         setJson(JSON.parse(data.content));
         setNeedsAuth(false);
-        setAuthError(""); // Clear error on success
+        setAuthError(""); 
       }
     } catch {
       console.error("Failed to load JSON");
@@ -137,31 +138,38 @@ function JsonViewerPage() {
       background: theme.background,
       color: theme.text,
       minHeight: "100vh",
-      padding: "40px 20px",
+      display: "flex",
+      flexDirection: "column", // Ensures footer stays at bottom
       fontFamily: "'Inter', system-ui, sans-serif",
-      transition: "background 0.3s ease"
     }}>
-      <div style={{ width: "100%", maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ width: "100%", maxWidth: 940, margin: "0 auto", padding: "0 20px 40px 20px", flex: 1 }}>
         
-        {/* HEADER */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "800", letterSpacing: "-0.5px" }}>
-            {darkMode ? "💠" : "🔷"} {APP_NAME.slice(0, 4)}<span style={{ color: theme.accent }}>{APP_NAME.slice(4)}</span>
-          </h1>
-          <p style={{ margin: "4px 0 0", opacity: 0.6, fontSize: "14px" }}>Visualize and share your data securely.</p>
-        </div>
-
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          marginTop: "20px",
+          marginBottom: "32px" 
+        }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "800", letterSpacing: "-0.5px" }}>
+              {darkMode ? "💠" : "🔷"} {APP_NAME.slice(0, 4)}
+              <span style={{ color: theme.accent }}>{APP_NAME.slice(4)}</span>
+            </h1>
+            <p style={{ margin: "4px 0 0", opacity: 0.6, fontSize: "14px" }}>
+              Visualize and share your data securely.
+            </p>
+          </div>
+  
           <button 
             onClick={() => setDarkMode(!darkMode)}
             style={{
               background: theme.card,
               border: `1px solid ${theme.border}`,
-              padding: "8px 12px",
+              padding: "10px",
               borderRadius: "12px",
               cursor: "pointer",
-              fontSize: "18px",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+              fontSize: "20px"
             }}
           >
             {darkMode ? "☀️" : "🌙"}
@@ -196,8 +204,6 @@ function JsonViewerPage() {
               outline: "none",
               transition: "border-color 0.2s"
             }}
-            onFocus={(e) => e.target.style.borderColor = theme.accent}
-            onBlur={(e) => e.target.style.borderColor = theme.border}
           />
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", flexWrap: "wrap", gap: "15px" }}>
@@ -232,70 +238,28 @@ function JsonViewerPage() {
               </label>
 
               {isPrivate && (
-                <div style={{ marginTop: 10, position: "relative" }}>
+                <div style={{ position: "relative" }}>
                   <input
                     type={showPasscode ? "text" : "password"}
-                    placeholder="Enter passcode (min 4 chars)"
+                    placeholder="Passcode"
                     value={passcode}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setPasscode(value);
-                      if (value.trim().length === 0) {
-                        setPasscodeError("Passcode is required");
-                      } else if (value.trim().length < 4) {
-                        setPasscodeError("Passcode must be at least 4 characters");
-                      } else {
-                        setPasscodeError("");
-                      }
-                    }}
+                    onChange={(e) => setPasscode(e.target.value)}
                     style={{
-                      padding: "12px 45px 12px 12px", // Extra right padding for the icon
-                      width: "100%",
-                      boxSizing: "border-box",
+                      padding: "10px 35px 10px 10px",
                       borderRadius: "8px",
-                      border: `1px solid ${passcodeError ? theme.error : theme.border}`,
+                      border: `1px solid ${theme.border}`,
                       background: theme.background,
                       color: theme.text,
-                      fontSize: "14px",
-                      outline: "none",
-                      transition: "border-color 0.2s"
+                      fontSize: "14px"
                     }}
                   />
-                  
-                  {/* EYE ICON TOGGLE */}
                   <button
                     type="button"
                     onClick={() => setShowPasscode(!showPasscode)}
-                    style={{
-                      position: "absolute",
-                      right: "12px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: "16px",
-                      padding: "5px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      opacity: 0.6,
-                      color: theme.text
-                    }}
+                    style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer" }}
                   >
                     {showPasscode ? "👁️" : "🙈"}
                   </button>
-
-                  {passcodeError && (
-                    <p style={{
-                        color: theme.error,
-                        fontSize: "12px",
-                        marginTop: "6px",
-                        fontWeight: "500"
-                      }}>
-                      {passcodeError}
-                    </p>
-                  )}
                 </div>
               )}
             </div>
@@ -309,28 +273,15 @@ function JsonViewerPage() {
               borderRadius: "12px",
               border: `1px dashed ${theme.accent}`
             }}>
-              <p style={{ margin: "0 0 8px 0", fontSize: "12px", fontWeight: "700", color: theme.accent, textTransform: "uppercase" }}>Your Shareable Link</p>
               <div style={{ display: "flex", gap: "10px" }}>
                 <input
                   value={shareUrl}
                   readOnly
-                  style={{
-                    flex: 1,
-                    padding: "10px",
-                    borderRadius: "8px",
-                    border: `1px solid ${theme.border}`,
-                    background: theme.card,
-                    color: theme.text,
-                    fontSize: "13px"
-                  }}
+                  style={{ flex: 1, padding: "10px", borderRadius: "8px", border: `1px solid ${theme.border}`, background: theme.card, color: theme.text }}
                 />
                 <button
                   onClick={handleCopy}
-                  style={{
-                    ...buttonStyle(copySuccess ? theme.success : "#64748b"),
-                    padding: "0 15px",
-                    fontSize: "13px"
-                  }}
+                  style={buttonStyle(copySuccess ? theme.success : "#64748b")}
                 >
                   {copySuccess ? "✓ Copied" : "Copy"}
                 </button>
@@ -341,56 +292,19 @@ function JsonViewerPage() {
 
         {/* AUTH FOR PRIVATE VIEW */}
         {needsAuth && (
-          <div style={{ 
-            textAlign: "center", 
-            padding: "40px", 
-            background: theme.card, 
-            borderRadius: "16px", 
-            marginBottom: "24px",
-            border: `2px solid ${authError ? theme.error : theme.accent}`,
-            transition: "all 0.3s ease"
-          }}>
-            <h3 style={{ margin: "0 0 16px 0" }}>🔒 This JSON is Protected</h3>
-            <div style={{ display: "flex", justifyContent: "center", gap: "10px", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <input
-                  type="password"
-                  placeholder="Enter passcode"
-                  value={accessCode}
-                  onChange={(e) => {
-                    setAccessCode(e.target.value);
-                    if (authError) setAuthError(""); // Clear error while typing
-                  }}
-                  style={{ 
-                    padding: "10px", 
-                    borderRadius: "8px", 
-                    border: `1px solid ${authError ? theme.error : theme.border}`,
-                    outline: "none",
-                    background: theme.background,
-                    color: theme.text
-                  }}
-                />
-                <button 
-                  onClick={() => fetchData(currentId, accessCode)} 
-                  style={buttonStyle(theme.accent)}
-                >
-                  Unlock Data
-                </button>
-              </div>
-              
-              {/* WRONG CODE MESSAGE */}
-              {authError && (
-                <p style={{ 
-                  color: theme.error, 
-                  fontSize: "14px", 
-                  marginTop: "12px", 
-                  fontWeight: "600",
-                  animation: "shake 0.2s ease-in-out 0s 2" // Optional: add a CSS shake
-                }}>
-                  {authError}
-                </p>
-              )}
+          <div style={{ textAlign: "center", padding: "40px", background: theme.card, borderRadius: "16px", marginBottom: "24px", border: `2px solid ${theme.accent}` }}>
+            <h3 style={{ margin: "0 0 16px 0" }}>🔒 Protected JSON</h3>
+            <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+              <input
+                type="password"
+                placeholder="Passcode"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                style={{ padding: "10px", borderRadius: "8px", border: `1px solid ${theme.border}`, background: theme.background, color: theme.text }}
+              />
+              <button onClick={() => fetchData(currentId, accessCode)} style={buttonStyle(theme.accent)}>Unlock</button>
             </div>
+            {authError && <p style={{ color: theme.error, marginTop: "10px" }}>{authError}</p>}
           </div>
         )}
 
@@ -403,12 +317,6 @@ function JsonViewerPage() {
           boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
           minHeight: "200px"
         }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px", alignItems: "center" }}>
-             <span style={{ fontSize: "12px", fontWeight: "700", opacity: 0.5, textTransform: "uppercase" }}>JSON Output</span>
-             {json && <span style={{ fontSize: "11px", background: theme.background, padding: "4px 8px", borderRadius: "4px" }}>Valid Object</span>}
-          </div>
-          
-          {error && <div style={{ color: theme.error, padding: "20px", textAlign: "center", fontWeight: "500" }}>{error}</div>}
           {!error && json && <JsonNode data={json} />}
           {!error && !json && (
             <div style={{ opacity: 0.3, textAlign: "center", padding: "60px 0" }}>
@@ -418,6 +326,7 @@ function JsonViewerPage() {
         </div>
 
       </div>
+      <VyomFooter />
     </div>
   );
 }

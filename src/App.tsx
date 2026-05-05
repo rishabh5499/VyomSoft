@@ -9,9 +9,10 @@ import TermsOfService from "./pages/TermsOfService"
 import Contact from "./pages/Contact"
 import About from "./pages/About"
 import MitaVyayaPrivacy from "./pages/privacy/MitaVyayaPrivacy"
-import SmartPausePrivacy from "./pages/privacy/SmartPausePrivacy"
+import VyomMutePrivacy from "./pages/privacy/VyomMutePrivacy"
 import NotFound from "./pages/NotFound"
 import JsonViewerPage from "./pages/JsonViewerPage"
+import VyomJSONPrivacy from "./pages/privacy/VyomJsonPrivacy"
 
 const queryClient = new QueryClient()
 
@@ -25,7 +26,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/privacy/mitavyaya" element={<MitaVyayaPrivacy />} />
-          <Route path="/privacy/smartpause" element={<SmartPausePrivacy />} />
+          <Route path="/privacy/VyomMute" element={<VyomMutePrivacy />} />
+          <Route path="/privacy/VyomJson" element={<VyomJSONPrivacy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />

@@ -1,3 +1,4 @@
+import React from 'react' // Added to resolve JSX intrinsic element errors
 import { Button } from "./ui/button"
 import { Badge } from "./ui/badge"
 import {
@@ -7,10 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card"
-import { ExternalLink, Shield, Check, ArrowRight } from "lucide-react"
+import { Shield, Check, ArrowRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-// Data-driven approach: Easier to update, scale, and manage.
 const productsData = [
   {
     name: "MitaVyaya",
@@ -33,11 +33,11 @@ const productsData = [
     themeColor: "indigo",
   },
   {
-    name: "Smart Pause",
+    name: "VyomMute",
     tagline: "Productivity Chrome Extension",
     description:
       "Enhance your workflow by automatically pausing YouTube when you join a meeting, and resuming seamlessly afterwards.",
-    logo: "/smart-pause.png",
+    logo: "/vyommute.png",
     status: "available",
     features: [
       "Auto Video Pause/Resume",
@@ -50,8 +50,29 @@ const productsData = [
       disabled: false,
       link: "https://chromewebstore.google.com/detail/smartpause-auto-pause-you/djacnhcnhcpfjjnhomkdeaoipdmdhmlo",
     },
-    privacyLink: "/privacy/smartpause",
+    privacyLink: "/privacy/VyomMute",
     themeColor: "blue",
+  },
+  {
+    name: "VyomJSON",
+    tagline: "Developer Utility Tool",
+    description:
+      "A high-performance JSON formatter and validator. Specifically optimized for developers needing to visualize and share complex data structures.",
+    logo: "/vyomjson.png",
+    status: "available",
+    features: [
+      "Real-time JSON Validation",
+      "Instantly Shareable JSON Links",
+      "Clean Tree View Visualization",
+    ],
+    primaryAction: {
+      text: "Launch VyomJSON",
+      image: null, // No image to avoid UI clash
+      disabled: false,
+      link: "https://vyomsoft.in/jsonViewer", 
+    },
+    privacyLink: "/privacy/vyomjson",
+    themeColor: "emerald", // This will trigger emerald-600/700 classes
   },
 ]
 
@@ -63,11 +84,9 @@ export const Products = () => {
       id="products"
       className="w-full py-2.5 mt-[-30px] sm:py-3 lg:py-4 bg-slate-50 overflow-hidden"
     >
-      {/* Subtle background grid */}
       <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
         <div className="text-center mb-16 sm:mb-20">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900">
             Our Products
@@ -78,14 +97,12 @@ export const Products = () => {
           </p>
         </div>
 
-        {/* Products Grid */}
         <div className="grid gap-8 lg:grid-cols-2 max-w-5xl mx-auto">
           {productsData.map((product) => (
             <Card
               key={product.name}
               className="group relative flex flex-col h-full bg-white/60 backdrop-blur-sm shadow-lg rounded-2xl overflow-hidden border border-slate-200/50 transition-all duration-300 hover:shadow-2xl hover:border-slate-300"
             >
-              {/* Subtle glow effect on hover */}
               <div
                 className={`absolute -inset-px opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl 
                 bg-gradient-to-r from-${product.themeColor}-400/50 to-blue-400/50 blur-lg`}
@@ -138,43 +155,51 @@ export const Products = () => {
                     ))}
                   </ul>
 
-                  {/* Action Buttons - Pushed to the bottom */}
                   <div className="mt-auto space-y-3">
                     {product.primaryAction.disabled ? (
-                      <div className="relative">
-                        <Button
-                          disabled
-                          size="lg"
-                          className="w-full h-12 bg-slate-200 text-slate-500 cursor-not-allowed"
-                        >
+                      <Button
+                        disabled
+                        size="lg"
+                        className="w-full h-12 bg-slate-50 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
+                      >
+                        {product.primaryAction.image ? (
                           <img
                             src={product.primaryAction.image}
                             alt={product.primaryAction.text}
-                            className="h-7 opacity-50"
+                            className="h-6 grayscale opacity-30"
                           />
-                        </Button>
-                      </div>
+                        ) : (
+                          <span>{product.primaryAction.text}</span>
+                        )}
+                      </Button>
                     ) : (
                       <Button
                         size="lg"
-                        className={`w-full h-12 bg-${product.themeColor}-600 hover:bg-${product.themeColor}-700 text-white font-semibold transition-transform duration-300 group-hover:scale-[1.02]`}
-                        onClick={() =>
-                          window.open(product.primaryAction.link, "_blank")
-                        }
+                        variant="outline" // Changed to outline for a cleaner, high-end look
+                        className={`w-full h-12 bg-white hover:bg-${product.themeColor}-50 text-slate-800 border-2 border-slate-200 hover:border-${product.themeColor}-500 font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md`}
+                        onClick={() => window.open(product.primaryAction.link, "_blank")}
                       >
-                        <img
-                          src={product.primaryAction.image}
-                          alt={product.primaryAction.text}
-                          className="h-7"
-                        />
+                        {product.primaryAction.image ? (
+                          <img
+                            src={product.primaryAction.image}
+                            alt={product.primaryAction.text}
+                            className="h-7 object-contain"
+                          />
+                        ) : (
+                          <>
+                            <span className={`text-${product.themeColor}-700`}>{product.primaryAction.text}</span>
+                            <ArrowRight className={`w-4 h-4 text-${product.themeColor}-600`} />
+                          </>
+                        )}
                       </Button>
                     )}
+                    {/* Privacy Button remains ghost */}
                     <Button
                       variant="ghost"
-                      className="w-full h-12 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      className="w-full h-10 text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 text-sm"
                       onClick={() => navigate(product.privacyLink)}
                     >
-                      <Shield className="w-4 h-4 mr-2" />
+                      <Shield className="w-4 h-4 mr-2 opacity-70" />
                       Privacy Policy
                     </Button>
                   </div>
