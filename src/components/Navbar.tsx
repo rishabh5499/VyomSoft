@@ -120,14 +120,6 @@ export const Navbar = () => {
               {section.charAt(0).toUpperCase() + section.slice(1)}
             </button>
           ))}
-          <button
-              onClick={() => {
-                setIsMenuOpen(false)
-                navigate("/jsonViewer")
-              }}
-              className="hover:text-blue-600 transition-colors">
-            JSON Viewer
-          </button>
         </div>
 
         {/* Right Side */}
