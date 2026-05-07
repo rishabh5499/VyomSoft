@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import JsonNode from "./JsonNode";
 import VyomFooter from "./VyomFooter";
 
-const API_BASE = "https://api.vyomsoft.in/api/json";
+const API_BASE = "http://localhost:8080/api/json";
+// const API_BASE = "https://api.vyomsoft.in/api/json";
 
 function JsonViewerPage() {
   const [input, setInput] = useState("");
@@ -20,6 +21,12 @@ function JsonViewerPage() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showPasscode, setShowPasscode] = useState(false);
   const [authError, setAuthError] = useState("");
+
+  // Storage Duration States
+  const [extendStorage, setExtendStorage] = useState(false);
+  const [durationValue, setDurationValue] = useState(2);
+  const [durationUnit, setDurationUnit] = useState("days");
+  const [isCustom, setIsCustom] = useState(false);
 
   const APP_NAME = "VyomJSON";
 
@@ -102,19 +109,21 @@ function JsonViewerPage() {
 
   const handleSave = async () => {
     try {
-      JSON.parse(input);
+      const parsedContent = JSON.parse(input);
       const res = await fetch(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: input,
+          content: parsedContent,
           privateData: isPrivate,
-          token: isPrivate ? passcode : null
+          token: isPrivate ? passcode : null,
+          durationValue: extendStorage ? parseInt(durationValue) : 2,
+          durationUnit: extendStorage ? durationUnit : "days"
         })
       });
       const data = await res.json();
       setShareUrl(`${window.location.origin}/jsonViewer/${data.id}`);
-    } catch {
+    } catch (err) {
       alert("Please enter valid JSON before saving.");
     }
   };
@@ -133,13 +142,37 @@ function JsonViewerPage() {
     gap: "8px"
   });
 
+  // Validation helper
+  const isOverLimit = () => {
+    if (durationUnit === "days" && durationValue > 180) return true;
+    if (durationUnit === "months" && durationValue > 6) return true;
+    if (durationUnit === "hours" && durationValue > 4320) return true;
+    return false;
+  };
+
+  const getLimitInfo = () => {
+    const limits = {
+      hours: 4320,
+      days: 180,
+      months: 6
+    };
+    
+    const limit = limits[durationUnit];
+    const isError = durationValue > limit;
+    
+    return {
+      isError,
+      message: `⚠️ Maximum storage allowed is ${limit} ${durationUnit}.`
+    };
+  };
+
   return (
     <div style={{
       background: theme.background,
       color: theme.text,
       minHeight: "100vh",
       display: "flex",
-      flexDirection: "column", // Ensures footer stays at bottom
+      flexDirection: "column",
       fontFamily: "'Inter', system-ui, sans-serif",
     }}>
       <div style={{ width: "100%", maxWidth: 940, margin: "0 auto", padding: "0 20px 40px 20px", flex: 1 }}>
@@ -213,12 +246,11 @@ function JsonViewerPage() {
               </button>
               <button 
                 onClick={handleSave} 
-                disabled={isPrivate && !passcode.trim()}
+                disabled={(isPrivate && !passcode.trim()) || (extendStorage && getLimitInfo().isError)}
                 style={{
                   ...buttonStyle(theme.accent),
-                  opacity: (isPrivate && !passcode.trim()) ? 0.5 : 1
-                }}
-              >
+                  opacity: ((isPrivate && !passcode.trim()) || (extendStorage && getLimitInfo().isError)) ? 0.5 : 1
+                }}>
                 Save & Share
               </button>
             </div>
@@ -265,6 +297,114 @@ function JsonViewerPage() {
             </div>
           </div>
 
+          {/* STORAGE DURATION BLOCK */}
+          <div style={{ marginTop: "24px", borderTop: `1px solid ${theme.border}`, paddingTop: "20px" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "14px", fontWeight: "600" }}>
+              <input
+                type="checkbox"
+                checked={extendStorage}
+                onChange={(e) => setExtendStorage(e.target.checked)}
+                style={{ width: "16px", height: "16px" }}
+              />
+              Extend storage duration
+            </label>
+
+            {!extendStorage ? (
+              <p style={{ fontSize: "12px", opacity: 0.6, marginTop: "8px", marginLeft: "24px" }}>
+                ℹ️ By default, links are stored for 2 days.
+              </p>
+            ) : (
+              <div style={{ marginTop: "16px", marginLeft: "24px" }}>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+                  <select
+                    value={isCustom ? "custom" : durationValue}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "custom") {
+                        setIsCustom(true);
+                        setDurationValue(45);
+                        setDurationUnit("days");
+                      } else {
+                        setIsCustom(false);
+                        setDurationValue(val);
+                        setDurationUnit("days");
+                      }
+                    }}
+                    style={{ 
+                      padding: "8px 12px", 
+                      borderRadius: "8px", 
+                      border: `1px solid ${theme.border}`, 
+                      background: theme.card, 
+                      color: theme.text,
+                      outline: "none"
+                    }}
+                  >
+                    <option value="2">2 Days (Default)</option>
+                    <option value="7">7 Days</option>
+                    <option value="30">30 Days (Recommended)</option>
+                    <option value="90">90 Days</option>
+                    <option value="180">180 Days (Max)</option>
+                    <option value="custom">Custom Range</option>
+                  </select>
+
+                  {isCustom && (
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <span style={{ fontSize: "14px" }}>Store for:</span>
+                      <input
+                        type="number"
+                        value={durationValue}
+                        onChange={(e) => setDurationValue(e.target.value)}
+                        min="1"
+                        style={{ 
+                          width: "70px", 
+                          padding: "8px", 
+                          borderRadius: "8px", 
+                          border: `1px solid ${isOverLimit() ? theme.error : theme.border}`, 
+                          background: theme.background, 
+                          color: theme.text,
+                          outline: "none"
+                        }}
+                      />
+                      <select
+                        value={durationUnit}
+                        onChange={(e) => setDurationUnit(e.target.value)}
+                        style={{ 
+                          padding: "8px", 
+                          borderRadius: "8px", 
+                          border: `1px solid ${theme.border}`, 
+                          background: theme.card, 
+                          color: theme.text,
+                          outline: "none"
+                        }}
+                      >
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                        <option value="months">Months</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+                
+                <p style={{ fontSize: "12px", color: theme.accent, marginTop: "12px", fontWeight: "500" }}>
+                  ℹ️ Store for more than 2 days, up to 180 days maximum.
+                </p>
+                
+                {/* DYNAMIC VALIDATION MESSAGE */}
+                {extendStorage && isCustom && getLimitInfo().isError && (
+                  <p style={{ 
+                    color: theme.error, 
+                    fontSize: "12px", 
+                    marginTop: "8px", 
+                    fontWeight: "700",
+                    animation: "shake 0.2s ease-in-out" 
+                  }}>
+                    {getLimitInfo().message}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           {shareUrl && (
             <div style={{ 
               marginTop: "20px", 
@@ -292,19 +432,24 @@ function JsonViewerPage() {
 
         {/* AUTH FOR PRIVATE VIEW */}
         {needsAuth && (
-          <div style={{ textAlign: "center", padding: "40px", background: theme.card, borderRadius: "16px", marginBottom: "24px", border: `2px solid ${theme.accent}` }}>
-            <h3 style={{ margin: "0 0 16px 0" }}>🔒 Protected JSON</h3>
-            <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
-              <input
-                type="password"
-                placeholder="Passcode"
-                value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value)}
-                style={{ padding: "10px", borderRadius: "8px", border: `1px solid ${theme.border}`, background: theme.background, color: theme.text }}
-              />
-              <button onClick={() => fetchData(currentId, accessCode)} style={buttonStyle(theme.accent)}>Unlock</button>
+          <div style={{ textAlign: "center", padding: "40px", background: theme.card, borderRadius: "16px", marginBottom: "24px", border: `2px solid ${authError ? theme.error : theme.accent}`, transition: "all 0.3s ease" }}>
+            <h3 style={{ margin: "0 0 16px 0" }}>🔒 This JSON is Protected</h3>
+            <div style={{ display: "flex", justifyContent: "center", gap: "10px", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <input
+                  type="password"
+                  placeholder="Enter passcode"
+                  value={accessCode}
+                  onChange={(e) => {
+                    setAccessCode(e.target.value);
+                    if (authError) setAuthError(""); 
+                  }}
+                  style={{ padding: "10px", borderRadius: "8px", border: `1px solid ${authError ? theme.error : theme.border}`, outline: "none", background: theme.background, color: theme.text }}
+                />
+                <button onClick={() => fetchData(currentId, accessCode)} style={buttonStyle(theme.accent)}>Unlock Data</button>
+              </div>
+              {authError && <p style={{ color: theme.error, fontSize: "14px", marginTop: "12px", fontWeight: "600" }}>{authError}</p>}
             </div>
-            {authError && <p style={{ color: theme.error, marginTop: "10px" }}>{authError}</p>}
           </div>
         )}
 
