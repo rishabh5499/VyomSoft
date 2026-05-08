@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import JsonNode from "./JsonNode";
 import VyomFooter from "./VyomFooter";
 
-const API_BASE = "http://localhost:8080/api/json";
-// const API_BASE = "https://api.vyomsoft.in/api/json";
+// const API_BASE = "http://localhost:8080/api/json";
+const API_BASE = "https://api.vyomsoft.in/api/json";
 
 function JsonViewerPage() {
   const [input, setInput] = useState("");
