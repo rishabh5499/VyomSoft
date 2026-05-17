@@ -13,6 +13,7 @@ import VyomMutePrivacy from "./pages/privacy/VyomMutePrivacy"
 import NotFound from "./pages/NotFound"
 import JsonViewerPage from "./pages/JsonViewerPage"
 import VyomJSONPrivacy from "./pages/privacy/VyomJsonPrivacy"
+import NotiPrivacy from "./pages/privacy/NotiPrivacy"
 
 const queryClient = new QueryClient()
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/privacy/mitavyaya" element={<MitaVyayaPrivacy />} />
           <Route path="/privacy/VyomMute" element={<VyomMutePrivacy />} />
           <Route path="/privacy/VyomJson" element={<VyomJSONPrivacy />} />
+          <Route path="/privacy/Noti" element={<NotiPrivacy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
