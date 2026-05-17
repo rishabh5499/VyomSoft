@@ -13,6 +13,26 @@ import { useNavigate } from "react-router-dom"
 
 const productsData = [
   {
+    name: "Noti",
+    tagline: "Daily Tasks & Notes Simplified",
+    description:
+      "Streamline your day with nested sub-task groups, real-time sync, intuitive swipe gestures, and integrated persistent notes.",
+    logo: "/noti.png", // Ensure you add this logo asset to your public path
+    status: "coming-soon",
+    features: [
+      "Dynamic Sub-Task Routines",
+      "Intuitive Swipe-to-Complete",
+      "Seamless Calendar Date Filtering",
+    ],
+    primaryAction: {
+      text: "Coming Soon to Google Play",
+      image: "/play-store.png",
+      disabled: true,
+    },
+    privacyLink: "/privacy/noti",
+    themeColor: "sky",
+  },
+  {
     name: "MitaVyaya",
     tagline: "Smart Expense Tracking App",
     description:
