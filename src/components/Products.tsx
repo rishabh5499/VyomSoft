@@ -18,16 +18,17 @@ const productsData = [
     description:
       "Streamline your day with nested sub-task groups, real-time sync, intuitive swipe gestures, and integrated persistent notes.",
     logo: "/noti.png", // Ensure you add this logo asset to your public path
-    status: "coming-soon",
+    status: "available",
     features: [
       "Dynamic Sub-Task Routines",
       "Intuitive Swipe-to-Complete",
       "Seamless Calendar Date Filtering",
     ],
     primaryAction: {
-      text: "Coming Soon to Google Play",
+      text: "View on Google Play",
       image: "/play-store.png",
-      disabled: true,
+      disabled: false,
+      link: "https://play.google.com/store/apps/details?id=in.vyomsoft.noti&pcampaignid=web_share"
     },
     privacyLink: "/privacy/noti",
     themeColor: "sky",
